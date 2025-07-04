@@ -1,6 +1,10 @@
 # Custom Dropdown – Technical Test
 
-Project URL: https://github.com/Yzamora25/custom-dropdown 
+**Repository URL**  
+https://github.com/Yzamora25/custom-dropdown
+
+**Project page URL**  
+https://roadmap.sh/projects/custom-dropdown
 
 Interactive, accessible dropdown built with **vanilla HTML/CSS/JS**.  
 Matches the mock-up requirements, includes keyboard support and responsive layout.
