@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<!--
+  Technical test solution (intermediate level)
+  Goal: custom dropdown that matches the provided mock-up.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Custom Dropdown – Tech Test</title>
+
+  <!-- ========== STYLES ========== -->
+  <style>
+    :root{
+      /* Design tokens (easy to tweak) */
+      --radius: .9rem;              /* same rounded corners as mock-up  */
+      --border-size: 2px;
+      --border: var(--border-size) solid #000;
+      --item-h: 4rem;               /* generous height for big text    */
+      --bg: #fff;
+      --bg-hover: #f4f4f4;
+      --font-size: 1.35rem;         /* large font like the sketch      */
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:"Inter",sans-serif;
+      background:#fafafa;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+      padding:2.5rem 1rem;
+      line-height:1.2;
+    }
+
+    /* ---------- Root component ---------- */
+    .dropdown{
+      width:100%;
+      max-width:360px;              /* width similar to the mock-up     */
+      position:relative;
+    }
+
+    /* ---------- Trigger (closed state) ---------- */
+    .dropdown__trigger{
+      height:var(--item-h);
+      padding:0 1.25rem;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      font-size:var(--font-size);
+      border:var(--border);
+      border-radius:var(--radius);
+      background:var(--bg);
+      cursor:pointer;
+      user-select:none;
+      transition:background .15s;
+      position:relative;
+    }
+    /* Arrow built with ::after so we can rotate it */
+    .dropdown__trigger::after{
+      content:'⌄';                   /* down arrow */
+      font-size:1.4rem;
+      transform-origin:center;
+      transition:transform .25s ease;
+    }
+    /* Rotate arrow when the dropdown is open */
+    .dropdown.open .dropdown__trigger::after{
+      transform:rotate(180deg);
+    }
+    /* Keyboard focus outline (accessibility) */
+    .dropdown__trigger:focus-visible{
+      outline:4px solid #6366f1;
+      outline-offset:3px;
+    }
+
+    /* ---------- Options list (hidden by default) ---------- */
+    .dropdown__list{
+      position:absolute;
+      top:calc(var(--item-h) + .35rem);
+      left:0; right:0;
+      border:var(--border);
+      border-radius:var(--radius);
+      background:var(--bg);
+      overflow:hidden;
+      /* Opening animation */
+      max-height:0;
+      opacity:0;
+      pointer-events:none;
+      transition:max-height .25s ease, opacity .25s ease;
+      z-index:100;
+    }
+    .dropdown.open .dropdown__list{
+      max-height:calc(var(--item-h) * 8);   /* room for many items */
+      opacity:1;
+      pointer-events:auto;
+    }
+
+    /* ---------- Single option ---------- */
+    .dropdown__item{
+      height:var(--item-h);
+      padding:0 1.25rem;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      font-size:var(--font-size);
+      cursor:pointer;
+      transition:background .15s;
+    }
+    /* Black dividers between items */
+    .dropdown__item + .dropdown__item{
+      border-top:var(--border-size) solid #000;
+    }
+    .dropdown__item:hover{
+      background:var(--bg-hover);
+    }
+
+    /* Circular “check” visible only when .--selected */
+    .dropdown__item--selected::after{
+      content:'✔';
+      font-size:.9rem;
+      color:#fff;
+      width:1.6rem; height:1.6rem;
+      background:#000;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    /* ---------- Small tweak for mobile ---------- */
+    @media(max-width:480px){
+      :root{ --item-h:3.5rem; --font-size:1.15rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========== DROPDOWN COMPONENT ========== -->
+  <div class="dropdown" id="exampleDropdown">
+    <!-- Trigger shown at all times -->
+    <div class="dropdown__trigger" tabindex="0"
+         data-placeholder="Select an Item">
+      <span class="dropdown__label">Select an Item</span>
+      <!-- Arrow is injected via ::after -->
+    </div>
+
+    <!-- Options list -->
+    <ul class="dropdown__list">
+      <li class="dropdown__item" data-value="1">First Item</li>
+      <li class="dropdown__item" data-value="2">Second Item</li>
+      <li class="dropdown__item" data-value="3">Third Item</li>
+      <li class="dropdown__item" data-value="4">Fourth Item</li>
+      <li class="dropdown__item" data-value="5">Fifth Item</li>
+    </ul>
+  </div>
+
+  <!-- ========== SCRIPT ========== -->
+  <script>
+    /**
+     * Vanilla-JS dropdown.
+     * Handles opening/closing, selection, keyboard support
+     * and click-outside to close.
+     */
+    document.querySelectorAll('.dropdown').forEach(drop => {
+
+      // Cache common nodes
+      const trigger = drop.querySelector('.dropdown__trigger');
+      const list    = drop.querySelector('.dropdown__list');
+      const label   = drop.querySelector('.dropdown__label');
+      const placeholder = trigger.dataset.placeholder;
+
+      // Helper functions
+      const open   = () => drop.classList.add('open');
+      const close  = () => drop.classList.remove('open');
+      const toggle = () => drop.classList.toggle('open');
+
+      /* === Open / close with mouse === */
+      trigger.addEventListener('click', toggle);
+
+      /* === Keyboard accessibility === */
+      trigger.addEventListener('keydown', e => {
+        if([' ', 'Enter'].includes(e.key)){    // open with Space / Enter
+          e.preventDefault(); toggle();
+        }
+        if(e.key === 'Escape'){               // close with Esc
+          close(); trigger.blur();
+        }
+      });
+
+      /* === Option selection === */
+      list.addEventListener('click', e => {
+        const item = e.target.closest('.dropdown__item');
+        if(!item) return;
+
+        // Remove previous selection
+        list.querySelectorAll('.dropdown__item')
+            .forEach(i => i.classList.remove('dropdown__item--selected'));
+
+        // Mark new item
+        item.classList.add('dropdown__item--selected');
+
+        // Update trigger label and value
+        label.textContent = item.textContent;
+        trigger.dataset.value = item.dataset.value;
+
+        close();
+        trigger.focus();                       // return focus to trigger
+      });
+
+      /* === Click outside closes the dropdown === */
+      document.addEventListener('click', e => {
+        if(!drop.contains(e.target)) close();
+      });
+
+      /* === Optional: double-click on trigger resets selection === */
+      trigger.addEventListener('dblclick', () => {
+        label.textContent = placeholder;
+        trigger.dataset.value = '';
+        list.querySelectorAll('.dropdown__item')
+            .forEach(i => i.classList.remove('dropdown__item--selected'));
+      });
+    });
+  </script>
+</body>
+</html>
